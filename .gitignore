@@ -1,0 +1,17 @@
+# .NET Core
+bin/
+obj/
+out/
+
+# Visual Studio files
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Docker
+.docker/
+
+# Environment files
+.env
+.env.local 
