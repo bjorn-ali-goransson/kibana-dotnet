@@ -25,6 +25,17 @@ services:
     networks:
       - elastic
 
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:8.12.1
+    environment:
+      - output.elasticsearch.hosts=["elasticsearch:9200"]
+    ports:
+      - "8200:8200"
+    depends_on:
+      - elasticsearch
+    networks:
+      - elastic
+
 volumes:
   elasticsearch-data:
     driver: local
