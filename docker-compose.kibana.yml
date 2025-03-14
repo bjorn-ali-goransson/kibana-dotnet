@@ -1,13 +1,11 @@
 
-# TODO: Remove login
-# TODO: remove curl setup step
-
 services:
 
   # this is a setup service to upsert the kibana_system user and set the password
   # it is not required for APM - only for Kibana as Fleet requires a non-default user
   setup:
-    # reusing same image as elasticsearch, it wont use any resources because we have a custom command
+    # reusing same image as elasticsearch as it has curl and bash and already cached
+    # t wont use any resources because we have a custom command
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
     depends_on:
       elasticsearch:
@@ -104,7 +102,7 @@ configs:
       # allow traffic
       server.host: 0.0.0.0
 
-      # creates the APM indices in elasticsearch (i think, once you have an application running)
+      # creates the APM indices in elasticsearch (i think, once you send data to APM server from your application)
       xpack.fleet.packages:
         - name: apm
           version: latest
