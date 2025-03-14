@@ -1,10 +1,7 @@
+# allow traffic
 server.host: 0.0.0.0
-status.allowAnonymous: true
-monitoring.ui.container.elasticsearch.enabled: true
-telemetry.enabled: false
-xpack.security.encryptionKey: fhjskloppd678ehkdfdlliverpoolfcr
-xpack.encryptedSavedObjects.encryptionKey: fhjskloppd678ehkdfdlliverpoolfcr
 
+# creates the APM indices in elasticsearch (i think, once you have an application running)
 xpack.fleet.packages:
   - name: apm
     version: latest

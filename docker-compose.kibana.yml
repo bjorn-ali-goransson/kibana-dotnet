@@ -1,34 +1,28 @@
 
+# TODO: Remove login
+# TODO: remove curl setup step
+
 services:
+
+  # this is a setup service to upsert the kibana_system user and set the password
+  # it is not required for APM - only for Kibana as Fleet requires a non-default user
   setup:
     # reusing same image as elasticsearch, it wont use any resources because we have a custom command
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
-    # volumes:
-    #   - certs:/usr/share/elasticsearch/config/certs
     depends_on:
       elasticsearch:
         condition: service_healthy
-    user: "0"
     command: >
       bash -c '
-        echo "Waiting for Elasticsearch availability";
-        until curl -s http://elasticsearch:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
         echo "Setting kibana_system password";
+        # retry until the user is created
         until curl -s -X POST  -u "elastic:change_me" -H "Content-Type: application/json" http://elasticsearch:9200/_security/user/kibana_system/_password -d "{\"password\":\"change_me\"}" | grep -q "^{}"; do sleep 10; done;
         echo "All done!";
       '
     networks:
       - net
-    # healthcheck:
-    #   test: ["CMD-SHELL", "[ -f config/certs/elasticsearch/elasticsearch.crt ]"]
-    #   interval: 1s
-    #   timeout: 5s
-    #   retries: 120
-  # Final storage: Elasticsearch
+
   elasticsearch:
-    # depends_on:
-    #   setup:
-    #     condition: service_healthy
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
     container_name: elasticsearch
     environment:
@@ -56,7 +50,6 @@ services:
     networks:
       - net
 
-  # Kibana to display monitoring data
   kibana:
     depends_on:
       elasticsearch:
@@ -85,7 +78,6 @@ services:
     networks:
       - net
 
-  # Kibana to display monitoring data
   apm-server:
     image: docker.elastic.co/apm/apm-server:8.12.1
     container_name: apm-server
@@ -109,10 +101,6 @@ services:
         condition: service_healthy
     networks:
       - net
-
-# volumes:
-#   certs:
-#     driver: local
 
 networks:
   net:
