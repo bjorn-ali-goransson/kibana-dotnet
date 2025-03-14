@@ -1,7 +1,0 @@
-# allow traffic
-server.host: 0.0.0.0
-
-# creates the APM indices in elasticsearch (i think, once you have an application running)
-xpack.fleet.packages:
-  - name: apm
-    version: latest

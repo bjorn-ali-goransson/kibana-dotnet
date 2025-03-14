@@ -64,17 +64,13 @@ services:
       - ELASTICSEARCH_PASSWORD=change_me
     ports:
       - 5601:5601
-    volumes:
-      - ./kibana.yml:/usr/share/kibana/config/kibana.yml
+    configs:
+      - source: kibana.yml
+        target: /usr/share/kibana/config/kibana.yml
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
-        ]
-      interval: 10s
-      timeout: 10s
-      retries: 120
+      test: ["CMD-SHELL", "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'"]
+      interval: 3s
+      timeout: 5s
     networks:
       - net
 
@@ -101,6 +97,17 @@ services:
         condition: service_healthy
     networks:
       - net
+
+configs:
+  kibana.yml:
+    content: |
+      # allow traffic
+      server.host: 0.0.0.0
+
+      # creates the APM indices in elasticsearch (i think, once you have an application running)
+      xpack.fleet.packages:
+        - name: apm
+          version: latest
 
 networks:
   net:
