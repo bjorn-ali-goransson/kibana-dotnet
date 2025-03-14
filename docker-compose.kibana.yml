@@ -1,8 +1,14 @@
-version: '3.8'
 
 services:
   setup:
+    # reusing same image as elasticsearch, it wont use any resources because we have a custom command
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
+    # volumes:
+    #   - certs:/usr/share/elasticsearch/config/certs
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    user: "0"
     command: >
       bash -c '
         echo "Waiting for Elasticsearch availability";
@@ -11,6 +17,8 @@ services:
         until curl -s -X POST  -u "elastic:change_me" -H "Content-Type: application/json" http://elasticsearch:9200/_security/user/kibana_system/_password -d "{\"password\":\"change_me\"}" | grep -q "^{}"; do sleep 10; done;
         echo "All done!";
       '
+    networks:
+      - net
     # healthcheck:
     #   test: ["CMD-SHELL", "[ -f config/certs/elasticsearch/elasticsearch.crt ]"]
     #   interval: 1s
@@ -29,14 +37,13 @@ services:
       - cluster.name=elasticsearch
       - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTIC_PASSWORD=change_me
       - bootstrap.memory_lock=true
       - xpack.security.enabled=true
       - xpack.security.authc.api_key.enabled=true
     ports:
       - 9200:9200
-    networks:
-      - net
     healthcheck:
         test: 
           [
@@ -46,6 +53,8 @@ services:
         interval: 10s
         timeout: 10s
         retries: 120
+    networks:
+      - net
 
   # Kibana to display monitoring data
   kibana:
@@ -62,8 +71,6 @@ services:
       - ELASTICSEARCH_PASSWORD=change_me
     ports:
       - 5601:5601
-    networks:
-      - net
     volumes:
       - ./kibana.yml:/usr/share/kibana/config/kibana.yml
     healthcheck:
@@ -75,6 +82,8 @@ services:
       interval: 10s
       timeout: 10s
       retries: 120
+    networks:
+      - net
 
   # Kibana to display monitoring data
   apm-server:
@@ -82,8 +91,6 @@ services:
     container_name: apm-server
     ports:
       - 8200:8200
-    networks:
-      - net
     command: >
        apm-server -e
          -E apm-server.rum.enabled=true
@@ -92,23 +99,21 @@ services:
          -E apm-server.kibana.enabled=true
          -E apm-server.kibana.host=kibana:5601
          -E apm-server.kibana.protocol=http
+         -E output.elasticsearch.hosts=["http://elasticsearch:9200"]
          -E apm-server.kibana.username=elastic
          -E apm-server.kibana.password=change_me
-         -E output.elasticsearch.hosts=["http://elasticsearch:9200"]
          -E output.elasticsearch.username=elastic
          -E output.elasticsearch.password=change_me
-    healthcheck:
-      interval: 10s
-      retries: 120
-      test: curl -I --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null https://localhost:8200/
     depends_on:
       elasticsearch:
         condition: service_healthy
+    networks:
+      - net
+
+# volumes:
+#   certs:
+#     driver: local
 
 networks:
   net:
     driver: bridge
-
-volumes:
-  certs:
-    driver: local
